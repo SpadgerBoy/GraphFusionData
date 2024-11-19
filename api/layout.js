@@ -1,5 +1,5 @@
 import { extent, sum, average,  deepcopy} from './function.js';
-function traverseNodes (graph) {
+function traverseNodes1 (graph) {
     let nodes = graph.nodes
     let links = graph.links
     let adjlist = {}
@@ -14,8 +14,8 @@ function traverseNodes (graph) {
         adjlist[d.id] = []
     })
     for(let i in links) {
-        let s = links[i].source.id
-        let t = links[i].target.id
+        let s = links[i].source
+        let t = links[i].target
         if(adjlist[s] == undefined) {
             adjlist[s] = []
         }
@@ -55,6 +55,60 @@ function traverseNodes (graph) {
         }
     }
 };
+function traverseNodes(graph) {
+    let nodes = graph.nodes;
+    let links = graph.links;
+    let adjlist = {};
+    let id2node = {};
+    let ids = [];
+
+    // 排序节点并初始化邻接表和映射
+    nodes.sort((a, b) => a.id - b.id); // 修正排序函数
+    nodes.forEach(d => {
+        id2node[d.id] = d;
+        ids.push(d.id);
+        adjlist[d.id] = [];
+    });
+
+    // 构建邻接表
+    links.forEach(link => {
+        let s = link.source
+        let t = link.target
+        adjlist[s].push(t);
+        adjlist[t].push(s);
+    });
+
+    // 按照邻接表的长度排序节点
+    ids.sort((a, b) => adjlist[a].length - adjlist[b].length);
+
+    // 初始化访问标记和序列
+    let vis = {};
+    let sequence = [];
+
+    // 遍历所有节点，执行深度优先搜索
+    for (let id of ids) {
+        if (!vis[id]) {
+            vis[id] = true;
+            sequence.push(id);
+            dfs(id);
+        }
+    }
+
+    // 重新排序节点
+    let new_nodes = sequence.map(id => id2node[id]);
+    graph.nodes = new_nodes;
+
+    // 深度优先搜索函数
+    function dfs(s) {
+        for (let t of adjlist[s]) {
+            if (vis[t]) continue;
+            vis[t] = true;
+            sequence.push(t);
+            dfs(t);
+        }
+    }
+}
+
 
 export function circleLayout (graph) {
     // console.log('circle layout:', JSON.parse(JSON.stringify(graph)))
@@ -99,6 +153,65 @@ export function circleLayout (graph) {
 
     return [centerX, centerY]
 };
+
+export function rectLayout(graph) {
+    traverseNodes(graph)
+    let nodes = graph.nodes
+    let links = graph.links
+
+    let xdomain = extent(graph.nodes, d => d.x);
+    let ydomain = extent(graph.nodes, d => d.y);
+    var sumx = sum(graph.nodes, d => d.x);
+    var sumy = sum(graph.nodes, d => d.y);
+    
+    let w = (xdomain[1] - xdomain[0])*1.3
+    let h = (ydomain[1] - ydomain[0])*1.3
+    
+    let layoutR = Math.min(w, h) * 0.8
+
+    let nodeArrLen = nodes.length
+
+    var matrixWidth = Math.floor(Math.sqrt(nodeArrLen))
+    if (Math.abs(matrixWidth * matrixWidth - nodeArrLen) > 0.01)
+        matrixWidth += 1
+
+    var matrixHeight = Math.floor(nodeArrLen / matrixWidth)
+    if (nodeArrLen / matrixWidth - matrixHeight > 0.01) {
+        matrixHeight += 1
+    }
+
+    var ci = Math.floor(matrixHeight / 2),
+        cj = Math.floor(matrixWidth / 2);
+    var potentialLocs = []
+
+    var sx = w * 0.8/ (matrixWidth)
+    var sy = h * 0.8 / (matrixHeight)
+    let centerX = w / 2
+    if(matrixWidth%2 ==0) { centerX += sx / 2}
+    let centerY = h / 2
+    if(matrixHeight%2 ==0) {centerY += sy / 2}
+    
+    for (var i = 0; i < matrixHeight; i++) {
+        for (var j = 0; j < matrixWidth; j++) {
+            potentialLocs.push([(j - cj) * sx + centerX, (i - ci) * sy + centerY])
+        }
+    }
+
+
+    for (var i = 0; i < nodeArrLen; i++) {
+        let hang = Math.floor(i / matrixWidth)
+        let index = 0
+        if(hang % 2 ==0 ) {
+            index = i
+        }
+        else {
+            index = hang * matrixWidth + (matrixWidth - i % matrixWidth - 1)
+        }
+        // console.log(i, index)
+        nodes[i].x = potentialLocs[index][0]
+        nodes[i].y = potentialLocs[index][1]
+    }
+}
 
 // export function lineLayout(graph, width, height) {
 //     traverseNodes(graph)

@@ -9,9 +9,9 @@ import * as path from 'path';
 export function getNewGraph(graph, output_dir, fileNameWithoutExtension) {
     
     // k为环的长度
-    for (let k=3; k<=6; k++){   
+    for (let k=3; k<=30; k++){   
         
-        console.log('Get subgraphs...')
+        console.log(`Get subgraphs: k=${k}...`)
         let subgraphs = getSubGraphs(graph, k);
     
         // console.log('subgraphs:', deepcopy(subgraphs))
@@ -31,8 +31,9 @@ export function getNewGraph(graph, output_dir, fileNameWithoutExtension) {
             dense_graph = { 'nodes': new_nodes, 'links': new_links }
         }
 
-        if (subgraphs.length == 0) return;
-       
+        console.log(`When K=${k}, the number of subgraphs: ${subgraphs.length}.`)
+        if (subgraphs.length == 0) continue;
+        
         for (let i = 0; i < subgraphs.length; i++) {
             
             let base_graph = deepcopy(graph);
@@ -56,16 +57,18 @@ export function getNewGraph(graph, output_dir, fileNameWithoutExtension) {
             let alphaArr = [1000]
 
             let new_Graph = LaplacianForceLayout(base_graph, dense_graph_, subgraph_, alphaArr, alphaMax, initNodes)
-            new_Graph = simplify(new_Graph)
-            // console.log(deepcopy(new_Graph))
 
             graphPosRescale(new_Graph)
             // console.log(deepcopy(new_Graph))
 
-            new_Graph.constraint_nodes_id = subgraph.constraint_nodes_id
+            // new_Graph = simplify(new_Graph)
+            new_Graph = simplify2(new_Graph)
+            // console.log(deepcopy(new_Graph))
+
+            // new_Graph.constraint_nodes_id = subgraph.constraint_nodes_id
             new_Graph.constraint_nodes_index = subgraph.constraint_nodes_index
             
-            var output_path = path.join(output_dir, `${fileNameWithoutExtension}_${k}_${i+1}.json`);
+            var output_path = path.join(output_dir, `${fileNameWithoutExtension}-${k}-${i+1}.json`);
             saveJsonToFile(new_Graph, output_path)
         }
     }
@@ -76,6 +79,7 @@ function extract(graph) {
     let new_links = []
     for (let i in graph.nodes) {
         let node = {}
+        // node['name'] = graph.nodes[i].id
         node['name'] = graph.nodes[i].id
         node['pos'] = [graph.nodes[i].x, graph.nodes[i].y]
         new_nodes.push(node)
@@ -110,4 +114,19 @@ function simplify(graph){
     }
     // return { 'nodes': new_nodes, 'links': new_links, 'scale': graph.setting.scale }
     return { 'nodes': new_nodes, 'links': new_links}
+}
+
+function simplify2(graph){
+    let pos = []
+    let edge_index = []
+    for (let i in graph.nodes) {
+        let pos_i = [graph.nodes[i].x, graph.nodes[i].y]
+        pos.push(pos_i)
+    }
+    for (let i in graph.links) {
+        let link = [+graph.links[i].source, +graph.links[i].target]
+        edge_index.push(link)
+    }
+    // return { 'nodes': new_nodes, 'links': new_links, 'scale': graph.setting.scale }
+    return { 'pos': pos, 'edge_index': edge_index}
 }

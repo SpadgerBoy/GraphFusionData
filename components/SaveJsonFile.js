@@ -13,7 +13,7 @@ export function saveJsonToFile(data, outputFileName) {
   }
 
   // 将 JSON 数据写入文件
-  fs.writeFile(outputFileName, JSON.stringify(data, null, 2), (err) => {
+  fs.writeFileSync(outputFileName, JSON.stringify(data, null, 2), (err) => {
     if (err) {
       console.error('无法写入文件:', err);
     } else {
@@ -21,4 +21,7 @@ export function saveJsonToFile(data, outputFileName) {
     }
   });
 }
+
+
+
 

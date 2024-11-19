@@ -18,7 +18,7 @@ export function LaplacianForceLayout(base_graph, dense_graph, mentalMaps, alphaA
     var iterationLowNumber = 100;
     var iterationUpNumber = 999;
     
-    console.log('Laplacian Force Layout...')
+    // console.log('Laplacian Force Layout...')
     var nodeLen = dense_graph.nodes.length
     var edgeLen = dense_graph.links.length
     var nodeIdMap = [];
@@ -264,7 +264,7 @@ export function LaplacianForceLayout(base_graph, dense_graph, mentalMaps, alphaA
 
         if ((Math.abs(E - E0) / E < iterationThreshold && iterNum > iterationLowNumber) || iterNum > iterationUpNumber) {
 
-            console.log('Laplacian stop.')
+            // console.log('Laplacian stop.')
             return base_graph
         }
 
